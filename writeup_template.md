@@ -20,12 +20,14 @@ The goals / steps of this project are the following:
 [//]: # (Image References)
 
 [image0]: ./examples/corners_drawn.png "Original Image with corners"
-[image1]: ./examples/undistort_output.png "Undistorted Image"
-[image2]: ./test_images/test1.jpg "Road Transformed"
-[image3]: ./examples/binary_combo_example.jpg "Binary Example"
-[image4]: ./examples/warped_straight_lines.jpg "Warp Example"
-[image5]: ./examples/color_fit_lines.jpg "Fit Visual"
-[image6]: ./examples/example_output.jpg "Output"
+[image1]: ./examples/undistored_image.png "Undistorted Image"
+[image2]: ./test_images/test6.jpg "Original Image"
+[image3]: ./examples/undist_example.png "Example of Undistorted Image"
+[image4]: ./examples/S_Channel_failing.JPG "Demostration of S Channel failure for certain images"
+[image5]: ./examples/R_channel_processing.JPG "Demostration of R Channel working fine"
+[image6]: ./examples/warped_binary.jpg "Warp Example"
+[image7]: ./examples/lane_detected.JPG "Lane Detected with the use of polynomial"
+[image8]: ./examples/final_result.JPG "Final Result with Curvature of Lane"
 [video1]: ./project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
@@ -65,47 +67,66 @@ I then used the output `objpoints` and `imgpoints` to compute the camera calibra
 To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
 ![alt text][image2]
 
-#### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
-
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
-
 ![alt text][image3]
 
-#### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
+#### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image. Provide an example of a binary image result.
 
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
+In order to detect lane I only used SobelX threshold and R-channel color threshold. After so many iteration I have choosen these two methods to create an binary image. Please find the following points which I have taken into consideration while adopting these image pre-processing:
 
-```python
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
-```
+- I have used only SobelX operator to find gradient since gradient in the x direction emphasizes edges closer to vertical.
 
-This resulted in the following source and destination points:
-
-| Source        | Destination   | 
-|:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
-
-I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
+- At first I used S channel of the image after converting the RGB image to HLS. But this processing was failing when there is shodow on lane or in general any dark color upon lane line. Below is a demostration of the explanation:
 
 ![alt text][image4]
 
+This exact same image when R channel threshold is being used it gives result as shown below:
+
+![alt text][image5]
+
+Even though R channel is not detecting lane well while using alone but with gradient it works well. And for this same image even with modifying threshold to find the lane line best, s channel fails. 
+
+I have also provided the video of S channel processing for specific timing where it was failing even with proper threshold which works fine for other frames in video.
+
+Here is the link of the video.
+Here's a [link to my video result with the use of S channel](./s_channel_video.mp4)
+
+#### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
+
+The code for my perspective transform includes a function called `perspective_tranform()`, which appears in 4th code cell of jupyter notebook. The `perspective_tranform()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points. I chose the hardcode the source and destination points in the following manner:
+
+```python
+src = np.float32(
+	[[180, img_size[0]], 
+	[575, 460], 
+	[705, 460], 
+	[1150, img_size[0]]])
+
+dst = np.float32(
+	[[280, img_size[0]], 
+	[280, 0], 
+	[960, 0], 
+	[960, img_size[0]]])
+```
+
+I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
+
+![alt text][image6]
+
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
+
+The code for detecting line is written in code cell 5. I have followed following steps as explained in `33. Finding the Lines` lesson in 4th module. Find the steps below:
+
+1. First I plotted the histogram of warped image which will have two peak points as shown in image below:
+
+2. Then I devided the histogram in 2 parts vertically and found the index of max pixel value which I have written in code cell for the test image I used. Because of that I found the base index of lane lines.
+
+3. I choose 9 windows to be fit in the image and find height of single window with dividing total height of warped image by window. i.e `window_height = np.int(binary_warped.shape[0]/nwindows) -> 720/9 = 80`
+
+4. 
 
 Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
 
-![alt text][image5]
+![alt text][image7]
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
@@ -115,7 +136,7 @@ I did this in lines # through # in my code in `my_other_file.py`
 
 I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
 
-![alt text][image6]
+![alt text][image8]
 
 ---
 
@@ -123,7 +144,7 @@ I implemented this step in lines # through # in my code in `yet_another_file.py`
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my final video result](./processed_project_video.mp4)
 
 ---
 
