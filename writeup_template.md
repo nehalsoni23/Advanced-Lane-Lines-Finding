@@ -58,14 +58,14 @@ Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that
 
 I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result: 
 
-![alt text][image0] ![alt text][image1]
+![alt text][image0]
+![alt text][image1]
 
 ### Pipeline (single images)
 
 #### 1. Provide an example of a distortion-corrected image.
 
-To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
-![alt text][image2]
+To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like shown below:
 
 ![alt text][image3]
 
@@ -89,6 +89,8 @@ I have also provided the video of S channel processing for specific timing where
 
 Here is the link of the video.
 Here's a [link to my video result with the use of S channel](./s_channel_video.mp4)
+
+Note: The test image I demostrated here is most affected by using S channel. For write up purpose I have used [this image](./test_images/test6.jpg) as shown on top.
 
 #### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
@@ -122,19 +124,24 @@ The code for detecting line is written in code cell 5. I have followed following
 
 3. I choose 9 windows to be fit in the image and find height of single window with dividing total height of warped image by window. i.e `window_height = np.int(binary_warped.shape[0]/nwindows) -> 720/9 = 80`
 
-4. 
+4. The pixel limit is set to 50 `minpix = 50`. So if in one window there are less than 50 pixels found, the base position for life and right lane will be recentred.
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+5. To find lane pixels on each of the 9 windows for loops is written which will first set the window's height and width. I have written the values of indexes for first window which starts from bottom of the image. Non-zero indexes are found within that window using numpy's nonzero function. Then after comparing number of pixels found in left and right side of image is being compare to `minpix` and 4th step is evaluated.
+
+6. Once the loop is over each window's left and right nonzero indexes are concatenated. From all nonzero indexes of left/right lane indexs found from each of the windows are extracted. From those data second degree polynomial constants are found using numpy's `polyfit` function.
+
+Then I filled the green color to window's area and highlighted the lane lines found with red  and blue color respectively as shown in an image below:
 
 ![alt text][image7]
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I did this in lines # through # in my code in `my_other_file.py`
+The code for finding radius of curvature is written in function `curvature_offset()` in code cell 6. First of all meter per pixels in x and y dimensions is being measured with the help of actual height and weight. Then new polynomial constants are found for new dimension for real world space. After that with the help of equation given in `Measuring Curvature` lesson curvature and vehicle offset are found.
+
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+I implemented this step in function `draw_lane()`.  Here is an example of my result on a test image:
 
 ![alt text][image8]
 
@@ -152,4 +159,5 @@ Here's a [link to my final video result](./processed_project_video.mp4)
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+I am processing each image frame with all the steps explained inspite of saving the polyfit constants for first image and using it for consecutive frames. Still I was able to get the desired output well. I am aware that this approach needs to be changed since it is more time consuming but to achieve that at this moment I need to give more time to sharpen my python programming skills which can take a while.
+The main problem I faced with existing approach is as I explained in step 2 above which is the implementation was failing when lane lines are being covered in tree shadow. Using R channel has proved to be beneficial for this particular kind of frames. Although R channel also seems to have an disadvantage when there is more sun light in road. But that time gradient with respect to X can very well detect lanes and combining  them gives desired output. The other approach of applying convolution also seems to be great and also shorter than the one I implemented.
